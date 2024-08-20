@@ -580,20 +580,27 @@ def get_pareto_groups_conservative(
     max_group_output_pos_better = lambda x: max(
         [obs.output * better_direction_sign for obs in x]
     )
-    first_pareto_group = max(
-        observations_below_min_threshold, key=group_output_pos_better
-    )
 
-    remaining_observations = [
-        group
-        for group in grouped_observations
-        if observation_group_cost(group) > min_pareto_cost
-    ]
+    if observations_below_min_threshold:
+        first_pareto_group = max(
+            observations_below_min_threshold, key=group_output_pos_better
+        )
+        remaining_observations = [
+            group
+            for group in grouped_observations
+            if observation_group_cost(group) > min_pareto_cost
+        ]
+        pareto_groups = [first_pareto_group]
+        best_output = group_output_pos_better(first_pareto_group)
+        best_output_max = max_group_output_pos_better(first_pareto_group)
+    else:
+        remaining_observations = list(grouped_observations)
+        pareto_groups = []
+        best_output = float('-inf')
+        best_output_max = float('-inf')
+
     remaining_observations.sort(key=observation_group_cost)
 
-    pareto_groups: List[ObservationGroup] = [first_pareto_group]
-    best_output = group_output_pos_better(first_pareto_group)
-    best_output_max = max_group_output_pos_better(first_pareto_group)
     for obs_group in remaining_observations:
         mean_output = group_output_pos_better(obs_group)
         # If only one sample, it must be better than the max of the last group
