@@ -164,6 +164,7 @@ class CARBS:
         """
         with self._suggest_or_observe_lock:
             if self._is_random_sampling():
+                print("======= Random sampling =======")  # xcxc
                 return self._get_random_suggestion(
                     suggestion_id, is_suggestion_remembered
                 )
@@ -174,6 +175,7 @@ class CARBS:
                 and len(self.success_observations)
                 > (self.resample_count + 1) * self.config.resample_frequency
             ):
+                print("======= Re-sampling =======")  # xcxc
                 suggestion_in_basic = self._get_resample_suggestion()
                 suggestion_in_param = self._basic_space_to_param_space(
                     suggestion_in_basic.real_number_input
@@ -186,6 +188,7 @@ class CARBS:
                     )
                 return SuggestOutput(suggestion=suggestion_in_param)
 
+            print("======= Generating candidates =======")  # xcxc
             try:
                 suggestion_in_basic = self._generate_candidate()
             except Exception as e:
@@ -482,6 +485,11 @@ class CARBS:
         samples_in_basic = self._round_integer_values_in_basic(samples_in_basic)
 
         assert samples_in_basic.shape[0] > 0
+
+        # This is NOT resampling. Exclude the samples that are in the success observations.
+        observed_samples = torch.stack([x.real_number_input for x in self.success_observations])
+        new_sample_mask = ~torch.any(torch.isclose(samples_in_basic[:, None], observed_samples[None, :]).all(dim=2), dim=1)
+        samples_in_basic = samples_in_basic[new_sample_mask]
 
         # This is why we overgenerated
         valid_sample_mask = self._get_mask_for_invalid_points_in_basic(samples_in_basic)
