@@ -489,12 +489,11 @@ class CARBS:
         # This is NOT resampling. Exclude the samples that are in the success observations.
         observed_samples = torch.stack([x.real_number_input for x in self.success_observations])
         new_sample_mask = ~torch.any(torch.isclose(samples_in_basic[:, None], observed_samples[None, :]).all(dim=2), dim=1)
-        samples_in_basic = samples_in_basic[new_sample_mask]
 
         # This is why we overgenerated
         valid_sample_mask = self._get_mask_for_invalid_points_in_basic(samples_in_basic)
-        samples_in_basic = samples_in_basic[valid_sample_mask][:num_samples_to_generate]
-        probabilities = probabilities[valid_sample_mask][:num_samples_to_generate]
+        samples_in_basic = samples_in_basic[valid_sample_mask & new_sample_mask][:num_samples_to_generate]
+        probabilities = probabilities[valid_sample_mask & new_sample_mask][:num_samples_to_generate]
 
         if samples_in_basic.shape[0] < num_samples_to_generate:
             logger.info(
@@ -571,6 +570,8 @@ class CARBS:
             * max_cost_masking
         )
         best_idx = int(torch.argmax(acquisition_function_value).item())
+
+        print("Suggesting the best candidate", best_idx)  # xcxc
 
         # A single point is chosen by that argmax, so log the info for that point
         log_info = dict(
