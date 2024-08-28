@@ -566,6 +566,12 @@ def get_pareto_groups_conservative(
         for group in grouped_observations
         if observation_group_cost(group) <= min_pareto_cost
     ]
+    # When there happens to be no observations below the min threshold, inspect observations' cost individually
+    if len(observations_below_min_threshold) == 0:
+        observations_below_min_threshold = [
+            tuple(x) for group in grouped_observations for x in group if x.cost <= min_pareto_cost
+        ]
+
     resampled_observations_below_min_threshold = [
         group for group in observations_below_min_threshold if len(group) > 1
     ]
